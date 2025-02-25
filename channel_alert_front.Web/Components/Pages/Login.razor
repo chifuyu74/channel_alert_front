@@ -1,0 +1,151 @@
+﻿@using System.Text
+@using System.Text.Json
+@using System.Net
+@using System.Net.Http.Headers
+@using System.Net.Mail
+
+@using System.Net.Mime
+@using channel_alert_front.Shared.HttpModels
+@using channel_alert_front.Shared.Models
+@using channel_alert_front.Web.States
+@using channel_alert_front.Web.Defines
+
+@page "/login"
+@layout Layout.EmptyLayout
+
+@inject ThemeState themeState
+@inject HttpClient http
+@inject IJSRuntime js
+@inject NavigationManager navigationManager
+
+<FluentDesignTheme StorageName="@themeState.storageName" @bind-Mode="@themeState.Mode" OfficeColor="@themeState.Color" />
+
+<FluentHeader>
+    <FluentButton Appearance="Appearance.Accent" BackgroundColor="rgba(0, 0, 0, 0)" Type="ButtonType.Button">
+        <span>Channel Alert</span>
+    </FluentButton>
+
+    <FluentSpacer />
+
+    <FluentToolbar>
+        <FluentButton>
+            <FluentIcon Value="new Icons.Regular.Size24.DarkTheme()" />
+        </FluentButton>
+        <FluentMenuButton Text="@themeState.Mode.ToString()" Items="@themeState.DesignThemes" OnMenuChanged="@OnThemeChanged" />
+        <FluentMenuButton Text="@themeState.Color.ToString()" Items="@themeState.OfficeColors" OnMenuChanged="@OnOfficeColorChanged" />
+    </FluentToolbar>
+</FluentHeader>
+
+<FluentStack Style="height: calc(100vh - 40px);" VerticalAlignment="VerticalAlignment.Center">
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
+        <FluentTextField @bind-Value="@email" Required Label="Email" Autofocus="true" InputMode="InputMode.Email" TextFieldType="TextFieldType.Email" Style="width: 220px;">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Mail())" Slot="start" />
+        </FluentTextField>
+
+        <FluentTextField @bind-Value="@password" Required Label="Password" Minlength="@minPasswordLength" TextFieldType="TextFieldType.Password" Style="width: 220px;" @onkeyup="@OnLoginKeyUpAsync">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Password())" Slot="start" />
+        </FluentTextField>
+
+        <FluentButton Type="ButtonType.Button" Appearance="Appearance.Accent" Style="width: 220px; margin-top: 24px;" OnClick="@OnLoginAsync">Login</FluentButton>
+    </FluentStack>
+</FluentStack>
+
+@* login *@
+@code {
+    private string email { get; set; } = string.Empty;
+    private string password { get; set; } = string.Empty;
+    private readonly int minPasswordLength = 8;
+
+    public bool IsValid(string emailAddress)
+    {
+        try
+        {
+            MailAddress mail = new(emailAddress);
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private async Task OnLoginKeyUpAsync(KeyboardEventArgs args)
+    {
+        if (args.Code == "Enter")
+        {
+            await OnLoginAsync();
+        }
+    }
+
+    private async Task OnLoginAsync()
+    {
+        if (string.IsNullOrEmpty(email) || IsValid(email) == false)
+        {
+            await js.InvokeVoidAsync("alert", "Email Is not Valid.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(password) || password.Length < minPasswordLength)
+        {
+            await js.InvokeVoidAsync("alert", $"Password Length must be greater than {minPasswordLength}.");
+            return;
+        }
+
+        LoginRequestModel request = new() { Email = email, Password = password };
+        string json = JsonSerializer.Serialize<LoginRequestModel>(request);
+        StringContent jsonBody = new(json, Encoding.UTF8, MediaTypeNames.Application.Json);
+        Uri uri = new(HttpRequests.GenerateBaseUrl(ERequestUrl.Auth_Login));
+
+        using HttpRequestMessage req = new();
+        req.RequestUri = uri;
+        req.Content = jsonBody;
+        req.Method = HttpMethod.Post;
+        using HttpResponseMessage res = await http.SendAsync(req);
+        if (res.StatusCode == HttpStatusCode.OK || res.StatusCode == HttpStatusCode.Accepted)
+        {
+            string resString = await res.Content.ReadAsStringAsync();
+            ResType<LoginResponseModel?>? resType = JsonSerializer.Deserialize<ResType<LoginResponseModel?>>(resString);
+            if (resType == null || resType.Data == null)
+            {
+                await js.InvokeVoidAsync("alert", "Login Failed.");
+                return;
+            }
+            else
+            {
+                LoginResponseModel? resp = resType.Data;
+
+                string accessToken = resp.Access;
+                await js.StorageAsync(EStorageType.Local, EStorageOperationType.Set, ETokenType.Access.ToString(), accessToken);
+
+                string refreshToken = resp.Refresh;
+                await js.StorageAsync(EStorageType.Local, EStorageOperationType.Set, ETokenType.Refresh.ToString(), refreshToken);
+                navigationManager.NavigatePage(EPageType.Home);
+            }
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "Login Failed.");
+        }
+    }
+}
+
+@* theme *@
+@code {
+    private void OnOfficeColorChanged(MenuChangeEventArgs args)
+    {
+        if (string.IsNullOrEmpty(args.Value))
+            return;
+
+        OfficeColor color = Enum.Parse<OfficeColor>(args.Value);
+        themeState.Color = color;
+    }
+
+    private void OnThemeChanged(MenuChangeEventArgs args)
+    {
+        if (string.IsNullOrEmpty(args.Value))
+            return;
+
+        DesignThemeModes mode = Enum.Parse<DesignThemeModes>(args.Value);
+        themeState.Mode = mode;
+    }
+}

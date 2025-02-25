@@ -1,0 +1,499 @@
+﻿@using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.FluentUI.AspNetCore.Components.Components
+@using Microsoft.FluentUI.AspNetCore.Components.DesignTokens
+@using Microsoft.FluentUI.AspNetCore.Components.Utilities
+@using Microsoft.FluentUI.AspNetCore.Components.DataGrid
+@using Microsoft.FluentUI.AspNetCore.Components.Extensions
+
+@using System
+@using System.Diagnostics;
+
+@using System.Security.Claims
+@using channel_alert_front.Web.Components.Utils
+@using channel_alert_front.Web.States
+@using channel_alert_front.Web.Defines
+@using channel_alert_front.Web.Components.Dialog
+@using channel_alert_front.Web.Components.Notification
+
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject HomeState homeState
+@inject ThemeState themeState
+@inject AccentBaseColor AccentBaseColor
+@inject NavigationManager navigationManager
+@inject IMessageService messageService
+@inject IDialogService dialogService
+@inject IJSRuntime js
+
+@inherits LayoutComponentBase
+
+@implements IDisposable
+
+<FluentToastProvider />
+<FluentDialogProvider />
+<FluentTooltipProvider />
+<FluentMenuProvider />
+<FluentKeyCodeProvider />
+<FluentMessageBarProvider Section="@AppEnums.MESSAGES_UNUSED.ToString()" MaxMessageCount="-1" Type="@MessageType.MessageBar" />
+
+<HeadContent>
+    <meta name="keywords" content="키워드1,키워드2, ... ,키워드10" />
+</HeadContent>
+
+@code {
+    string stylevalue = $"background-color: var(--neutral-layer-3); overflow: auto; resize: none; width: 86px; height: calc(100vh - 126px);  padding: 10px;";
+}
+
+<FluentDesignTheme StorageName="@themeState.storageName" @bind-Mode="@themeState.Mode" OfficeColor="@themeState.Color" />
+
+<FluentHeader>
+    <FluentButton OnClick="@OnMenuAsync" BackgroundColor="rgba(0, 0, 0, 0)" Appearance="Appearance.Accent">
+        <FluentIcon Value="@MenuIcon()" Width="24" Color="Color.Fill" />
+    </FluentButton>
+
+    <FluentButton OnClick="@OnNavigateHome" Appearance="Appearance.Accent" BackgroundColor="rgba(0, 0, 0, 0)" Type="ButtonType.Button">
+        @*<FluentIcon Value="@LogoIcon()" Width="24" Color="Color.Neutral" />*@
+        <span>Channel Alert</span>
+    </FluentButton>
+
+    <FluentSpacer />
+
+    <FluentToolbar Style="margin-right: 16px; border-radius: 4px;">
+        @* Message Sampler *@
+        <FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="@OnMessageAsync" Title="Notification center" />
+
+        <FluentButton OnClick="@OnClipboardCopyAsync">
+            <FluentIcon Value="new Icons.Regular.Size24.Clipboard()" />
+        </FluentButton>
+
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+
+        <FluentButton OnClick="@OnScreenshotTakeAsync">
+            <FluentIcon Value="new Icons.Regular.Size24.Screenshot()" />
+        </FluentButton>
+        <FluentMenuButton Text="@homeState.DocumentType.ToString()" Items="@homeState.DocumentTypeItems" OnMenuChanged="@OnDocumentTypeChanged" />
+
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+
+        <FluentButton>
+            <FluentIcon Value="new Icons.Regular.Size24.DarkTheme()" />
+        </FluentButton>
+        <FluentMenuButton Text="@themeState.Mode.ToString()" Items="@themeState.DesignThemes" OnMenuChanged="@OnThemeChanged" />
+        <FluentMenuButton Text="@themeState.Color.ToString()" Items="@themeState.OfficeColors" OnMenuChanged="@OnOfficeColorChanged" />
+
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+        <FluentDivider Orientation="Orientation.Vertical" />
+
+        <FluentButton Appearance="Appearance.Neutral" BackgroundColor="rgba(0, 0, 0, 0)" Class="NoticiationCenter" OnClick="@OpenNotificationCenterAsync">
+            @if (messageService.Count(AppEnums.MESSAGES_NOTIFICATION_CENTER.ToString()) > 0)
+            {
+                <FluentCounterBadge Max="9"
+                                    Count="@(messageService.Count(@AppEnums.MESSAGES_NOTIFICATION_CENTER.ToString()))"
+                                    Color="Color.Fill"
+                                    Appearance="Appearance.Accent"
+                                    BackgroundColor="@Color.Error"
+                                    ShowOverflow="true">
+                    <ChildContent>
+                        <FluentIcon Value="@NotificationIcon()" Width="24" Color="Color.Neutral" Title="Noticiation Center" />
+                    </ChildContent>
+                </FluentCounterBadge>
+            }
+            else
+            {
+                <FluentIcon Value="@NotificationIcon()" Width="24" Color="Color.Neutral" Title="Noticiation Center" />
+            }
+        </FluentButton>
+    </FluentToolbar>
+
+    @if (_signedIn)
+    {
+        <FluentProfileMenu Initials=""
+                           ImageSize="24px">
+            <HeaderTemplate>
+                <FluentPersona Name=""
+                               Initials=""
+                               StatusSize="@PresenceBadgeSize.Tiny"
+                               ImageSize="48px">
+                    <ChildContent>
+                        <FluentLabel Typo="@Typography.Subject">Name</FluentLabel>
+                        <FluentLabel Typo="@Typography.Body" Color="Color.Neutral">@Email</FluentLabel>
+                    </ChildContent>
+                </FluentPersona>
+            </HeaderTemplate>
+            <ChildContent>
+                <div style="width: 218px;">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Start">
+                        @* <FluentButton BackgroundColor="rgba(0, 0, 0, 0)">View Account</FluentButton> *@
+                        <FluentButton BackgroundColor="rgba(0, 0, 0, 0)" OnClick="@OnSignOut">Sign Out</FluentButton>
+                    </FluentStack>
+                </div>
+            </ChildContent>
+            <FooterTemplate>
+            </FooterTemplate>
+        </FluentProfileMenu>
+    }
+    else
+    {
+        <FluentButton OnClick="() => {}" Style="margin-left: 16px;">
+            <span>Sign In</span>
+        </FluentButton>
+    }
+</FluentHeader>
+
+@*
+<FluentStack>
+    <FluentBreadcrumb>
+        <FluentBreadcrumbItem>item 1</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>item 2</FluentBreadcrumbItem>
+    </FluentBreadcrumb>
+</FluentStack>
+*@
+
+<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Start">
+    @if (_menuDisplay)
+    {
+        <FluentStack Orientation="Orientation.Vertical" Style="width: 250px;">
+            @*
+        <div style="@stylevalue">
+        <FluentAppBar Orientation="Orientation.Vertical">
+        @foreach (string key in _icons.Keys)
+        {
+        <FluentAppBarItem Match="NavLinkMatch.All" Href="@($"/{key}")" IconRest="@_icons[key]" IconActive="@(_icons[key])" Text="@key" />
+        }
+        </FluentAppBar>
+        </div>
+        *@
+            <FluentNavMenu Width="250">
+                @*<FluentNavLink Icon="new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Home()" Href="@($"/home")" Match="NavLinkMatch.All" Style="margin-top: 0;">Home</FluentNavLink>*@
+                @foreach (EPageType key in _icons.Keys)
+                {
+                    <FluentNavLink Icon="@_icons[key]" Href="@($"/{key}")" Match="NavLinkMatch.All" Style="@(GetHomeStyle(key))">
+                        @(key.ToString())
+                    </FluentNavLink>
+                }
+            </FluentNavMenu>
+            <FluentButton Style="width: 100%" OnClick="@OpenSplashAsync">
+                Splash Screen
+            </FluentButton>
+        </FluentStack>
+    }
+
+    <FluentBodyContent>
+        <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Top">
+            <FluentPullToRefresh OnRefreshAsync="OnRefreshAsync" Direction="PullDirection.Down" Style="width: 100%;">
+
+            </FluentPullToRefresh>
+        </FluentStack>
+        @Body
+    </FluentBodyContent>
+</FluentStack>
+
+@code
+{
+    protected string Email { get; set; } = "Unknown";
+
+    private bool _signedIn = true;
+    private Icon LogoIcon() => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Alert();
+    private Icon MenuIcon() => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Navigation();
+    private Icon NotificationIcon() => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Alert();
+
+    private Icon ResourcesIcon(bool active = false) =>
+        active ? new Microsoft.FluentUI.AspNetCore.Components.Icons.Filled.Size24.AppFolder()
+            : new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.AppFolder();
+
+    string GetHomeStyle(EPageType key) => $"margin-top: {(key == EPageType.Home ? 0 : 16)}px";
+    private Dictionary<EPageType, Icon> _icons = new()
+    {
+        { EPageType.Home, new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Home() },
+        { EPageType.Login, new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.SignOut() },
+        { EPageType.Dashboard, new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Board() }
+    };
+
+    string FirstUpper(string word)
+    {
+        return string.Concat(word[0].ToString().ToUpper(), word.AsSpan(1));
+    }
+
+    public bool _menuDisplay { get; set; } = true;
+    public virtual async Task OnMenuAsync()
+    {
+        //_menuDisplay = !_menuDisplay;
+        await OpenPanelLeftAsync();
+    }
+
+    public void OnNavigateHome()
+    {
+        navigationManager.NavigatePage(EPageType.Home);
+    }
+
+    public async Task OnSignOut()
+    {
+        await js.StorageAsync(EStorageType.Local, EStorageOperationType.Remove, ETokenType.Access.ToString());
+        await js.StorageAsync(EStorageType.Local, EStorageOperationType.Remove, ETokenType.Refresh.ToString());
+        navigationManager.NavigatePage(EPageType.Login);
+    }
+}
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        homeState.OnChange -= StateHasChanged;
+        homeState.OnChange += StateHasChanged;
+
+        messageService.OnMessageItemsUpdated += UpdateCount;
+        dialogService.OnDialogCloseRequested += OnDialogCloseRequested;
+
+        Console.WriteLine("hello initialized");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        string? accessToken = await GetToken(ETokenType.Access);
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            _signedIn = false;
+            navigationManager.NavigatePage(EPageType.Login);
+            return;
+        }
+
+        // Validate Token
+        if (!Util.ValidateJwtToken(accessToken))
+        {
+            navigationManager.NavigatePage(EPageType.Login);
+            return;
+        }
+        
+        Dictionary<string, string> claims = Util.TokenToClaims(accessToken);
+        Email = claims[ClaimTypes.Name];
+        _signedIn = true;
+    }
+
+    public void Dispose()
+    {
+        homeState.OnChange -= StateHasChanged;
+        messageService.OnMessageItemsUpdated -= UpdateCount;
+        dialogService.OnDialogCloseRequested -= OnDialogCloseRequested;
+    }
+
+    public void OnDialogCloseRequested(IDialogReference reference, DialogResult result)
+    {
+        if (reference.Equals(_panel))
+        {
+            Console.WriteLine(435345);
+        }
+    }
+}
+
+@* Login Token *@
+@code {
+
+    public virtual async Task<string?> GetToken(ETokenType type)
+    {
+        string? token = await js.StorageAsync(EStorageType.Local, EStorageOperationType.Get, type.ToString());
+        Console.WriteLine($"token: {token}");
+        return token;
+    }
+}
+
+@* Toolbar *@
+@code
+{
+    protected virtual async Task OnClipboardCopyAsync()
+    {
+        await js.InvokeVoidAsync("ClipboardCopy", navigationManager.Uri);
+    }
+
+    public virtual async Task OnScreenshotTakeAsync()
+    {
+        switch (homeState.DocumentType)
+        {
+            case EDocumentType.PNG:
+                await js.InvokeVoidAsync("capture");
+                break;
+            case EDocumentType.JPG:
+                await js.InvokeVoidAsync("captureJpg");
+                break;
+            case EDocumentType.PDF:
+                await js.InvokeVoidAsync("capturePdf");
+                break;
+            default:
+                break;
+        }
+        
+    }
+
+    private void OnOfficeColorChanged(MenuChangeEventArgs args)
+    {
+        if (string.IsNullOrEmpty(args.Value))
+            return;
+
+        OfficeColor color = Enum.Parse<OfficeColor>(args.Value);
+        themeState.Color = color;
+    }
+
+    private void OnThemeChanged(MenuChangeEventArgs args)
+    {
+        if (string.IsNullOrEmpty(args.Value))
+            return;
+
+        DesignThemeModes mode = Enum.Parse<DesignThemeModes>(args.Value);
+        themeState.Mode = mode;
+    }
+
+    protected virtual void OnDocumentTypeChanged(MenuChangeEventArgs args)
+    {
+        if (string.IsNullOrEmpty(args.Value))
+            return;
+
+        homeState.DocumentType = Enum.Parse<EDocumentType>(args.Value);
+    }
+
+    protected virtual async Task<bool> OnRefreshAsync()
+    {
+        await Task.Delay(250);
+        return true;
+    }
+
+    ActionLink<Message> link = new()
+        {
+            Text = "Learn More",
+            Href = "https://bing.com",
+            OnClick = (e) => { Console.WriteLine("Message Learn more Clicked"); return Task.CompletedTask; }
+        };
+
+    public void UpdateCount()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected virtual async Task OnMessageAsync()
+    {
+        await messageService.ShowMessageBarAsync((options) =>
+        {
+            options.Intent = MessageIntent.Success;
+            options.Title = "Simple Message Notification Center";
+            options.Body = "MessageBar Body";
+            options.Timestamp = DateTime.Now;
+            options.Link = link;
+            options.Section = @AppEnums.MESSAGES_NOTIFICATION_CENTER.ToString();
+        });
+    }
+
+    private async Task OpenNotificationCenterAsync()
+    {
+        Console.WriteLine($"Open notification center");
+
+        _dialog = await dialogService.ShowPanelAsync<NotificationCenterPanel>(new DialogParameters<GlobalState>()
+            {
+                Alignment = HorizontalAlignment.Right,
+                Title = $"Notifications",
+                PrimaryAction = null,
+                SecondaryAction = null,
+                ShowDismiss = true
+            });
+        DialogResult result = await _dialog.Result;
+        HandlePanel(result);
+    }
+    private IDialogReference? _dialog;
+    private void HandlePanel(DialogResult result)
+    {
+        if (result.Cancelled)
+        {
+            Console.WriteLine($"Notification center dismissed");
+            return;
+        }
+
+        if (result.Data is not null)
+        {
+            Console.WriteLine($"Notification center closed");
+            return;
+        }
+    }
+
+
+
+    private readonly DialogMenuParameters simplePerson = new()
+        {
+            Firstname = "Steve",
+            Lastname = "Roth",
+            Age = 42,
+        };
+
+    IDialogReference _panel;
+    public virtual async Task OpenPanelLeftAsync()
+    {
+        Action<DialogInstance> instance = (dig) =>
+        {
+        };
+
+        DialogParameters<DialogMenuParameters> parameters = new()
+            {
+                Content = simplePerson,
+                Width = "250px",
+                ShowDismiss = false,
+                Modal = true,
+                Alignment = HorizontalAlignment.Left,
+                Title = $"Hello Panel!",
+                OnDialogResult = dialogService.CreateDialogCallback(this, HandlePanelAsync),
+            };
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        _panel = await dialogService.ShowPanelAsync<DialogMenu, DialogMenuParameters>(parameters);
+#pragma warning restore CS0618 // Type or member is obsolete
+    }
+
+    #pragma warning disable CS1998
+    public virtual async Task HandlePanelAsync(DialogResult result)
+    {
+        Console.WriteLine($"{nameof(HandlePanelAsync)}");
+        return;
+    }
+    #pragma warning restore CS1998
+
+    IDialogReference? _splash { get; set; } = null;
+    private async Task OpenSplashAsync()
+    {
+        DialogParameters<SplashScreenContent> parameter = new()
+            {
+                Modal = false,
+                Width = "640px",
+                Height = "480px",
+                PreventDismissOnOverlayClick = false,
+                Content = new()
+                {
+                    DisplayTime = 0,
+                    Title = "Core Components",
+                    SubTitle = "Microsoft Fluent UI Blazor library",
+                    LoadingText = "Loading...",
+                    Message = (MarkupString)"some <i>extra</i> text <strong>here</strong>",
+                    Logo = FluentSplashScreen.LOGO,
+                },
+            };
+
+        _splash = await dialogService.ShowSplashScreenAsync(parameter);
+
+        var splashScreen = (SplashScreenContent)_splash.Instance.Content;
+
+        DialogResult result = await _splash.Result;
+        HandleSplash(result);
+    }
+
+    protected virtual void HandleSplash(DialogResult result)
+    {
+
+    }
+}

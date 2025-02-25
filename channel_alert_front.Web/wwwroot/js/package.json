@@ -1,0 +1,17 @@
+{
+  "name": "js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "s": "webpack ./src/capture.js --output-path . --output-filename capture.bundle.js",
+    "sss": "snowpack build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.13"
+  }
+}

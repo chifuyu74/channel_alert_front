@@ -1,0 +1,23 @@
+﻿@using channel_alert_front.Web.Defines
+
+@implements IDialogContentComponent<GlobalState>
+@inject IMessageService MessageService
+
+<div>
+
+    <FluentStack>
+        <FluentSpacer />
+        <FluentButton Appearance="@Appearance.Accent" OnClick="@(e => MessageService.Clear("MESSAGES_NOTIFICATION_CENTER") )">
+            Dismiss all
+        </FluentButton>
+    </FluentStack>
+
+    <br />
+
+    <FluentMessageBarProvider Section="@AppEnums.MESSAGES_NOTIFICATION_CENTER.ToString()" MaxMessageCount="-1" Type="@MessageType.Notification" />
+</div>
+
+@code {
+    [Parameter]
+    public GlobalState Content { get; set; } = default!;
+}

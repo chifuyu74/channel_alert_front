@@ -1,0 +1,14 @@
+﻿@using channel_alert_front.Web.Defines;
+
+@page "/"
+
+@inject NavigationManager navigationManager
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        navigationManager.NavigatePage(EPageType.Home);
+    }
+}

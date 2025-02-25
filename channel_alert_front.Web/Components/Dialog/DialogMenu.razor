@@ -1,0 +1,12 @@
+﻿@using channel_alert_front.Web.Components.Dialog
+
+@implements IDialogContentComponent<DialogMenuParameters>
+
+<FluentDialogBody>
+    <h3>Hello @Content.Firstname</h3>
+</FluentDialogBody>
+
+@code {
+    [Parameter]
+    public DialogMenuParameters Content { get; set; } = default!;
+}

@@ -1,0 +1,61 @@
+﻿@using channel_alert_front.Web.States;
+@inject ThemeState themeState
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="channel_alert_front.Web.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css" rel="stylesheet" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <FluentDesignTheme StorageName="@themeState.storageName" Mode="@themeState.Mode" OfficeColor="@themeState.Color" ModeChanged="@ModeChanged" OfficeColorChanged="@ColorChanged" />
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/stock.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js" integrity="sha512-7tWCgq9tTYS/QkGVyKrtLpqAoMV9XIUxoou+sPUypsaZx56cYR/qio84fPK9EvJJtKvJEwt7vkn6je5UVzGevw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="js/src/capture.js"></script>
+    <script src="js/src/clipboard.js"></script>
+    <script src="js/src/dps.js"></script>
+    <script src="js/src/stock.js"></script>
+    <script src="js/src/line.js"></script>
+    <script src="js/src/test.js"></script>
+    <script src="js/src/storage.js"></script>
+
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code
+{
+    void ModeChanged(DesignThemeModes mode)
+    {
+        themeState.Mode = mode;
+    }
+
+    void ColorChanged(OfficeColor? color)
+    {
+        if (color == null)
+            return;
+
+        themeState.Color = (OfficeColor)color;
+    }
+}

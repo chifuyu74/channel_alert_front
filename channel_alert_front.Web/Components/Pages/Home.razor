@@ -1,0 +1,429 @@
+﻿@using System
+@using Microsoft.JSInterop
+
+@using ApexCharts
+@using Radzen.Blazor
+
+@using System.Globalization
+@using channel_alert_front.Shared.Models
+@using channel_alert_front.Web.States
+
+@page "/home"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@layout Layout.MainLayout
+
+@inject ThemeState themeState
+@inject IJSRuntime js
+@inject HttpClient http
+@inject IToastService toast
+
+<RadzenTheme Theme="material" @rendermode="InteractiveAuto" />
+
+@code
+{
+    bool smooth = false;
+    bool sharedTooltip = true;
+    bool showDataLabels = false;
+    bool showMarkers = true;
+
+    class DataItem
+    {
+        public string Quarter { get; set; }
+        public double Revenue { get; set; }
+    }
+
+    DataItem[] revenue = new DataItem[] {
+    new DataItem
+    {
+    Quarter = "Q1",
+    Revenue = 30000
+    },
+    new DataItem
+    {
+    Quarter = "Q2",
+    Revenue = 40000
+    },
+    new DataItem
+    {
+    Quarter = "Q3",
+    Revenue = 50000
+    },
+    new DataItem
+    {
+    Quarter = "Q4",
+    Revenue = 80000
+    },
+    };
+
+    public class DataItem2
+    {
+        public string Date { get; set; }
+        public double Revenue { get; set; }
+    }
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("ko-KR"));
+    }
+
+    DataItem2[] revenue2023 = new DataItem2[] {
+        new DataItem2
+        {
+            Date = "Jan",
+            Revenue = 234000
+        },
+        new DataItem2
+        {
+            Date = "Feb",
+            Revenue = 269000
+        },
+        new DataItem2
+        {
+            Date = "Mar",
+            Revenue = 233000
+        },
+        new DataItem2
+        {
+            Date = "Apr",
+            Revenue = 244000
+        },
+        new DataItem2
+        {
+            Date = "May",
+            Revenue = 214000
+        },
+        new DataItem2
+        {
+            Date = "Jun",
+            Revenue = 253000
+        },
+        new DataItem2
+        {
+            Date = "Jul",
+            Revenue = 274000
+        },
+        new DataItem2
+        {
+            Date = "Aug",
+            Revenue = 284000
+        },
+        new DataItem2
+        {
+            Date = "Sept",
+            Revenue = 273000
+        },
+        new DataItem2
+        {
+            Date = "Oct",
+            Revenue = 282000
+        },
+        new DataItem2
+        {
+            Date = "Nov",
+            Revenue = 289000
+        },
+        new DataItem2
+        {
+            Date = "Dec",
+            Revenue = 294000
+        }
+    };
+
+    DataItem2[] revenue2024 = new DataItem2[] {
+        new DataItem2
+        {
+            Date = "Jan",
+            Revenue = 334000
+        },
+        new DataItem2
+        {
+            Date = "Feb",
+            Revenue = 369000
+        },
+        new DataItem2
+        {
+            Date = "Mar",
+            Revenue = 333000
+        },
+        new DataItem2
+        {
+            Date = "Apr",
+            Revenue = 344000
+        },
+        new DataItem2
+        {
+            Date = "May",
+            Revenue = 314000
+        },
+        new DataItem2
+        {
+            Date = "Jun",
+            Revenue = 353000
+        },
+        new DataItem2
+        {
+            Date = "Jul",
+            Revenue = 374000
+        },
+        new DataItem2
+        {
+            Date = "Aug",
+            Revenue = 384000
+        },
+        new DataItem2
+        {
+            Date = "Sept",
+            Revenue = 373000
+        },
+        new DataItem2
+        {
+            Date = "Oct",
+            Revenue = 382000
+        },
+        new DataItem2
+        {
+            Date = "Nov",
+            Revenue = 389000
+        },
+        new DataItem2
+        {
+            Date = "Dec",
+            Revenue = 394000
+        }
+    };
+}
+
+<FluentStack Orientation="Microsoft.FluentUI.AspNetCore.Components.Orientation.Horizontal">
+    <FluentMultiSplitter Orientation="Microsoft.FluentUI.AspNetCore.Components.Orientation.Horizontal" Panel1MinSize="15%" Panel2MinSize="15%" BarSize="16px">
+        <FluentMultiSplitterPane Min="15%" Size="50%">
+            @* Donut Chart *@
+            <RadzenChart Style="flex: 1;">
+                <RadzenDonutSeries Data="@revenue" CategoryProperty="Quarter" ValueProperty="Revenue" TotalAngle="360" StartAngle="180">
+                    <ChildContent>
+                        <RadzenSeriesDataLabels Visible="true" />
+                    </ChildContent>
+                    <TitleTemplate>
+                        <div class="rz-donut-content">
+                            <div>Revenue</div>
+                        </div>
+                    </TitleTemplate>
+                </RadzenDonutSeries>
+            </RadzenChart>
+        </FluentMultiSplitterPane>
+        <FluentMultiSplitterPane Min="15%" Size="50%">
+            <RadzenChart Style="flex: 1;">
+                <RadzenChartTooltipOptions Shared="@sharedTooltip" />
+                <RadzenLineSeries Smooth="@smooth" Data="@revenue2023" CategoryProperty="Date" Title="2023" LineType="LineType.Dashed" ValueProperty="Revenue">
+                    <RadzenMarkers Visible="@showMarkers" MarkerType="MarkerType.Square" />
+                    <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                </RadzenLineSeries>
+                <RadzenLineSeries Smooth="@smooth" Data="@revenue2024" CategoryProperty="Date" Title="2024" ValueProperty="Revenue">
+                    <RadzenMarkers Visible="@showMarkers" MarkerType="MarkerType.Circle" />
+                    <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                </RadzenLineSeries>
+                <RadzenCategoryAxis Padding="20" />
+                <RadzenValueAxis Formatter="@FormatAsUSD">
+                    <RadzenGridLines Visible="true" />
+                    <RadzenAxisTitle Text="Revenue in USD" />
+                </RadzenValueAxis>
+            </RadzenChart>
+        </FluentMultiSplitterPane>
+    </FluentMultiSplitter>
+</FluentStack>
+
+<ApexChart TItem="MyCandle" Title="Sample Data" Debug="true">
+    <ApexCandleSeries TItem="MyCandle"
+                      XValue="e => e.time"
+                      Items="Candles"
+                      Name="Sex"
+                      Close="a => a.close"
+                      Open="a => a.open"
+                      High="a => a.high"
+                      Low="a => a.low" />
+</ApexChart>
+
+<FluentCard>
+    <h4>Search</h4>
+    <FluentSearch @onkeyup="@OnKeyupSearchAsync" @bind-Value=_searchWord @ref="_searchRef" Appearance="FluentInputAppearance.Outline" Required="true" Placeholder="Search..." Minlength="2" />
+    <FluentSpacer />
+    <FluentDataGrid TGridItem="AlertGrid" Items="@GridItems.AsQueryable()" Virtualize="true" ItemSize="54" GenerateHeader="@GenerateHeaderOption.Sticky">
+        <ChildContent>
+            <SelectColumn TGridItem="AlertGrid"
+                          Property="@(c => c.Selected)"
+                          Width="5%"
+                          Align="Microsoft.FluentUI.AspNetCore.Components.Align.Center"
+                          OnSelect="@OnSelect"
+                          SelectMode="DataGridSelectMode.Multiple"
+                          SelectAll="@(GridItems.All(p => p.Selected))"
+                          SelectAllChanged="@SelectAllChanged">
+                <HeaderCellItemTemplate>
+                    <FluentCheckbox Style="cursor: pointer;" />
+                </HeaderCellItemTemplate>
+            </SelectColumn>
+            <PropertyColumn Width="50%" Property="@(c => c.Item1)" />
+            <PropertyColumn Width="45%" Property="@(c => c.Item1)" Title="마나링" />
+        </ChildContent>
+        <LoadingContent>
+            <FluentStack Orientation="Microsoft.FluentUI.AspNetCore.Components.Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
+                <p>Loading...</p>
+                <FluentProgress />
+            </FluentStack>
+        </LoadingContent>
+        <EmptyContent>
+            <FluentIcon Value="@(new Icons.Filled.Size24.Crown())" />
+            <p>Nothing to see here. Carry on!</p>
+        </EmptyContent>
+    </FluentDataGrid>
+</FluentCard>
+
+<div id="high_stock">
+    <FluentButton OnClick="@RunStockAsync">JS Run Stock</FluentButton>
+    <FluentButton OnClick="@RunBoxPlotAsync">JS Boxplot</FluentButton>
+    <FluentButton OnClick="@FFGraphAsync">FF Boxplot</FluentButton>
+</div>
+
+<div id="stock_div"></div>
+<div id="ffgraph"></div>
+<div id="ffgraph_1" class="@(themeState.Mode == DesignThemeModes.Dark ? "highcharts-dark" : "")"></div>
+
+<FluentButton OnClick="@RunAsync">Gen Line</FluentButton>
+<figure class="highcharts-figure">
+    <div id="line_div"></div>
+</figure>
+
+@code
+{
+    public async Task RunAsync()
+    {
+        await js.InvokeVoidAsync("CreateLine");
+    }
+
+    public async Task RunStockAsync()
+    {
+        await js.InvokeVoidAsync("CreateChart");
+    }
+
+    public async Task RunBoxPlotAsync()
+    {
+        await js.InvokeVoidAsync("CreateDps");
+    }
+
+    public async Task FFGraphAsync()
+    {
+        await js.InvokeVoidAsync("FFGraph");
+        Console.WriteLine(themeState.Mode);
+    }
+}
+
+@* ApexCharts *@
+@code
+{
+    private List<MyCandle> Candles { get; set; } = new();
+
+    public class MyCandle
+    {
+        public int high { get; set; }
+        public int low { get; set; }
+        public int open { get; set; }
+        public int close { get; set; }
+        public DateTime time { get; set; }
+    }
+}
+
+@* Lifecycle *@
+@code
+{
+    Random rad = new();
+
+    protected override void OnInitialized()
+    {
+        for (int i = 0; i < 30; ++i)
+        {
+            MyCandle candle = new()
+                {
+                    open = rad.Next() * 1000,
+                    close = rad.Next() * 1000 - 30,
+                    high = rad.Next() * 2000,
+                    low = rad.Next() * 900,
+                    time = DateTime.Now - TimeSpan.FromMinutes(i + 1)
+                };
+            Candles.Add(candle);
+
+            AlertGrid data = new()
+                {
+                    Item1 = rad.Next(),
+                    Selected = false
+                };
+            GridItems.Add(data);
+        }
+    }
+}
+
+@* Search *@
+@code
+{
+    string _searchWord { get; set; } = string.Empty;
+    FluentSearch _searchRef { get; set; } = null;
+    ToastParameters<CommunicationToastContent> communicationParam = new()
+        {
+            Intent = ToastIntent.Success,
+            Title = "Inquiry Success!",
+            Timeout = 4000,
+            PrimaryAction = "Confirm",
+            Content = new()
+            {
+                Subtitle = "",
+                Details = "Let Power BI help you"
+            },
+
+        };
+
+    public async Task OnKeyupSearchAsync(KeyboardEventArgs args)
+    {
+        if (args.Key != "Enter")
+            return;
+
+        string uri = "https://jsonplaceholder.typicode.com/todos/1";
+        using HttpResponseMessage stringResult = await http.GetAsync(uri);
+        string result = await stringResult.Content.ReadAsStringAsync();
+        Console.WriteLine(result);
+
+        if (communicationParam.OnPrimaryAction == null)
+        {
+            communicationParam.OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, PrimaryAction);
+        }
+
+        toast.ShowCommunicationToast(communicationParam);
+    }
+
+    public void PrimaryAction(ToastResult result)
+    {
+        Console.WriteLine($"{result}");
+    }
+}
+
+@* DataGrid *@
+@code
+{
+    List<AlertGrid> GridItems = [];
+    bool _selectAll { get; set; } = false;
+
+    public void SelectAllChanged(bool? selectedAll)
+    {
+        if (selectedAll == null)
+            return;
+
+        foreach (AlertGrid row in GridItems)
+        {
+            row.Selected = ((bool)selectedAll == true);
+        }
+    }
+
+    public void OnSelect((AlertGrid, bool) t)
+    {
+        (AlertGrid data, bool selected) = t;
+        Console.WriteLine($"data => {data.Item1}, {data.Selected} / selected: {selected}");
+        data.Selected = selected;
+    }
+}
